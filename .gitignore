@@ -1,52 +1,120 @@
-# Prerequisites
-*.d
+#include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
 
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
+#define Board_Size 10
+#define Num_Mines 15
 
-# Linker output
-*.ilk
-*.map
-*.exp
+void initializeBoard(char board[Board_Size][Board_Size],char hiddenBoard[Board_Size][Board_Size]){
+	for(int i=0;i<Board_Size;i++){
+		for(int j=0;j<Board_Size;j++){
+			board[i][j]='-';
+			hiddenBoard[i][j]='-';
+		}
+	}
+}
 
-# Precompiled Headers
-*.gch
-*.pch
+void placeMines(char board[Board_Size][Board_Size]){
+	int count=0;
+	while(count<Num_Mines){
+		int x= rand() % Board_Size;
+		int y= rand() % Board_Size;
+		
+		if (board[x][y]!='*'){
+			board[x][y]='*';
+			count ++;
+		}
+	}
+}
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
+void printBoard(char board[Board_Size][Board_Size]){
+	for (int i=0;i<Board_Size;i++){
+		for (int j=0;j<Board_Size;j++){
+			printf(" %c ",board[i][j]);
+		}
+		printf("\n\n");
+	}
+}
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
+int countAdjacentMines(char board[Board_Size][Board_Size],int x,int y){
+	int count = 0;
+	for (int i=x-1;i<=x+1;i++){
+		for(int j=y-1;j<=y+1;j++){
+			if (i>=0 && i<Board_Size && j>=0 && j<Board_Size && board[i][j] == '*'){
+				count ++;
+			}
+		}
+	}
+	return count;
+}
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
+void revealBoard(char board[Board_Size][Board_Size], char hiddenBoard[Board_Size][Board_Size], int x, int y){
+	if (x<0 || x>=Board_Size || y<0 || y>=Board_Size || hiddenBoard[x][y]==' '){
+		return ;
+	}
+	
+	hiddenBoard[x][y] = ' ';
+	if (board[x][y]=='0'){
+		for(int i=x-1;i<=x+1;i++){
+			for(int j=y-1;j<=y+1;j++){
+				revealBoard(board,hiddenBoard,i,j);
+			}
+		}
+	}
+}
 
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
-
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+int main (){
+	srand(time(NULL));
+	
+	char board[Board_Size][Board_Size];
+	char hiddenBoard[Board_Size][Board_Size];
+	
+	initializeBoard(board, hiddenBoard);
+	
+	placeMines(board);
+	
+	int gameOver=0;
+	
+	while(gameOver!=1){
+		printf("Tahtaniz:\n");
+		printBoard(hiddenBoard);
+		
+		int x, y;
+		printf("Lutfen sutun ve satirlarinizi giriniz (1,1 gibi) : ");
+		scanf ("%d,%d",&x,&y);
+		
+		if (board[x][y]=='*'){
+			printf("KAYBETTINIZ");
+			gameOver=1;
+		}
+		
+		else{
+			int mines = countAdjacentMines(board,x,y);
+			hiddenBoard[x][y]= (mines==0) ? ' ' : (mines + '0');
+			
+			if (mines==0){
+				revealBoard(board,hiddenBoard,x,y);
+			}
+			
+		}
+		
+		int uncoveredCount=0;
+		for(int i=0;i<Board_Size;i++){
+			for(int j=0;j<Board_Size;j++){
+				if(hiddenBoard[i][j]==' '){
+					uncoveredCount++;
+				}
+			}
+		}
+		
+		if (uncoveredCount== (Board_Size) * (Board_Size) - Num_Mines){
+			printf("TEBRIKLER KAZANDINIZ");
+			gameOver=1;
+		}
+	}
+	
+	printf("Tahtanin Son Durumu : \n");
+	printBoard(board);
+	
+	return 0;	
+}
